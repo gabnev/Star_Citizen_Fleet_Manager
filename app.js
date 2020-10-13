@@ -70,6 +70,52 @@ const ShipCtrl = (function() {
       data.totalCredits = total;
 
       return data.totalCredits;
+    },
+    getShipById: function(id) {
+      // Step - loop through data to find ship
+      let found = null;
+
+      data.ships.forEach((ship) => {
+        if(ship.id === id) {
+          found = ship;
+        }
+      })
+
+      return found;
+    },
+    setCurrentShip: function(ship) {
+      data.currentShip = ship;
+    },
+    getCurrentShip: function() {
+      return data.currentShip;
+    },
+    updatedShip: function(name, cost) {
+      // Step 48 - get info, parse cost to number
+      cost = parseInt(cost);
+
+      let found = null;
+
+      data.ships.forEach((ship) => {
+        if(ship.id == data.currentShip.id) {
+          ship.name = name;
+          ship.cost = cost;
+          found = ship;
+        }
+      });
+      return found;
+    },
+    deleteShip: function(id) {
+      // Step 55
+      const ids = data.ships.map((ship) => {
+        return ship.id;
+      });
+
+      const index = ids.indexOf(id);
+
+      data.ships.splice(index, 1);
+    },
+    clearAllShips: function() {
+      data.ships = [];
     }
   }
 })();
@@ -84,37 +130,39 @@ const UIctrl = (function() {
 
   const UIselectors = {
     shipList: '#ship-list',
+    shipsList: '#ship-list li',
     addBtn: '.add-btn',
     updateBtn: '.update-btn',
     removeBtn: '.remove-btn',
     backBtn: '.back-btn',
+    clearBtn: '.clear-btn',
     inputShipName: '#ship-name',
     inputShipCost: '#ship-cost',
     totalCredits: '.total-credits'
   }
 
   return {
-    // Step 7 - provide data for population
     populateShipList: function(ships) {
+      // Step 7 - provide data for population
       let html = '';
 
       ships.forEach((ship) => {
         html += `
           <li id="ship-${ship.id}" class="collection-item">
             <strong>${ship.name}: </strong><em>${ship.cost} credits</em>
-            <a class="secondary-content" href="#"><i class="fas fa-edit "></i></i></a>
+            <a class="secondary-content" href="#"><i class="edit-ship fas fa-edit "></i></i></a>
           </li>
         `;
       })
 
       document.querySelector(UIselectors.shipList).innerHTML = html;
     },
-    // Step 8 - get UIselectors
     getUiSelectors: function() {
+      // Step 8 - get UIselectors
       return UIselectors;
     },
-    // Step 12 - get inputs
     getShipInput: function() {
+      // Step 12 - get inputs
       return {
         name: document.querySelector(UIselectors.inputShipName).value,
         cost: document.querySelector(UIselectors.inputShipCost).value
@@ -132,23 +180,72 @@ const UIctrl = (function() {
       
       li.innerHTML = `
         <strong>${ship.name}: </strong><em>${ship.cost} credits</em>
-        <a class="secondary-content" href="#"><i class="fas fa-edit "></i></i></a>
+        <a class="secondary-content" href="#"><i class="edit-ship fas fa-edit"></i></i></a>
       `;
 
       document.querySelector(UIselectors.shipList).insertAdjacentElement('beforeend', li);
     },
-    // Step 25 - clear input function
     clearInput: function() {
+      // Step 25 - clear input function
       document.querySelector(UIselectors.inputShipName).value = '';
       document.querySelector(UIselectors.inputShipCost).value = '';
     },
-    // Step 26 - hide UL
     hideList: function() {
+      // Step 26 - hide UL
       document.querySelector(UIselectors.shipList).style.display = 'none';
     },
     showTotalCredits: function(totalCredits) {
       // Step 32
       document.querySelector(UIselectors.totalCredits).textContent = totalCredits;
+    },
+    clearEditState: function() {
+      // Step 34 
+      UIctrl.clearInput();
+
+      document.querySelector(UIselectors.addBtn).style.display = 'inline-block';
+      document.querySelector(UIselectors.updateBtn).style.display = 'none';
+      document.querySelector(UIselectors.removeBtn).style.display = 'none';
+      document.querySelector(UIselectors.backBtn).style.display = 'none';
+    },
+    showEditState: function() {
+      // Step 44 
+
+      document.querySelector(UIselectors.addBtn).style.display = 'none';
+      document.querySelector(UIselectors.updateBtn).style.display = 'inline-block';
+      document.querySelector(UIselectors.removeBtn).style.display = 'inline-block';
+      document.querySelector(UIselectors.backBtn).style.display = 'inline-block';
+    },
+    addShipToForm: function() {
+      document.querySelector(UIselectors.inputShipName).value = ShipCtrl.getCurrentShip().name;
+      document.querySelector(UIselectors.inputShipCost).value = ShipCtrl.getCurrentShip().cost; 
+
+      // Step 43 - Show edit buttons when needed
+      UIctrl.showEditState();
+    },
+    updateShip: function(ship) {
+      let listShips = document.querySelectorAll(UIselectors.shipsList);
+
+      // Step 50 - convert the node lists to array
+      listShips = Array.from(listShips);
+
+      listShips.forEach((listShip) => {
+
+        const shipID = listShip.getAttribute('id');
+
+        if(shipID === `ship-${ship.id}`) {
+          document.querySelector(`#${shipID}`).innerHTML = `
+            <strong>${ship.name}: </strong><em>${ship.cost} credits</em>
+            <a class="secondary-content" href="#"><i class="edit-ship fas fa-edit"></i></i></a>
+          `;
+        }
+      })
+    },
+    deleteListShip: function(id) {
+      const shipID = `#ship-${id}`;
+
+      const ship = document.querySelector(shipID);
+
+      ship.remove();
     }
   }
 
@@ -162,7 +259,7 @@ const UIctrl = (function() {
 
 const app = (function(ShipCtrl, UIctrl) {  
   
-  // Step 9 - Load event listeners
+  // Step 9 - Stores & Loades event listeners
   const loadEventListeners = function() {
 
     // Get UI selectors
@@ -170,6 +267,30 @@ const app = (function(ShipCtrl, UIctrl) {
 
     // Add ship event
     document.querySelector(UIselectors.addBtn).addEventListener('click', shipAddSubmit);
+
+    // Step 46 - disable ENTER key
+    document.addEventListener('keypress', (e) => {
+      if(e.key === 'Enter') {
+        e.preventDefault();
+        return false;
+      }
+    })
+
+    // Step 36 - EDIT ICON CLICK
+    document.querySelector(UIselectors.shipList).addEventListener('click', shipEditClick)
+
+    // Step 45
+    document.querySelector(UIselectors.updateBtn).addEventListener('click', shipUpdateSubmit);
+
+    
+    // Step53 - Remove Function
+    document.querySelector(UIselectors.removeBtn).addEventListener('click', shipDeleteSubmit);    
+    
+    // Step52 - Clear edit State
+    document.querySelector(UIselectors.backBtn).addEventListener('click', UIctrl.clearEditState);
+
+    // Step58 - Clear edit State
+    document.querySelector(UIselectors.clearBtn).addEventListener('click', clearAllShipsClick);
   }
 
   // Step 11 - Add ship function
@@ -200,9 +321,83 @@ const app = (function(ShipCtrl, UIctrl) {
     e.preventDefault();
   }
 
+  // Step 37 - EDIT BTN 
+  const shipEditClick = function(e) {
+    
+    if(e.target.classList.contains('edit-ship')) {
+      // Step 38 - get list ship id
+      const listId = e.target.parentNode.parentNode.id;
+
+      const listIdArr = listId.split('-');
+
+      const id = parseInt(listIdArr[1]);
+
+      // Step 39 - You have the ID, now get the ship
+      const shipToEdit = ShipCtrl.getShipById(id);
+
+      // Step 41 - SET CURRENT SHIP
+      ShipCtrl.setCurrentShip(shipToEdit);
+
+      // Step 42
+      UIctrl.addShipToForm();
+
+    }
+    
+    e.preventDefault();
+  }
+
+  const shipUpdateSubmit = function(e) {
+    
+    const input = UIctrl.getShipInput();
+
+    // Step 47 - update ship
+    const updatedShip = ShipCtrl.updatedShip(input.name, input.cost);
+
+    // Step 49 - update UI with new edit
+    UIctrl.updateShip(updatedShip);
+
+    // Step 51 - update credit counter after edit
+    const totalCredits = ShipCtrl.getTotalCredits();
+    UIctrl.showTotalCredits(totalCredits);
+
+    UIctrl.clearEditState();
+
+    e.preventDefault();
+  }
+
+  const shipDeleteSubmit = function(e) {
+    
+    // Step 54 - get current item to delete
+    const currentShip = ShipCtrl.getCurrentShip();
+
+    ShipCtrl.deleteShip(currentShip);
+
+    // Step 57 - Delete from UI
+    UIctrl.deleteListShip(currentShip.id);
+
+    // Step 58 - update credit counter after edit
+    const totalCredits = ShipCtrl.getTotalCredits();
+    UIctrl.showTotalCredits(totalCredits);
+
+    UIctrl.clearEditState();
+
+
+    e.preventDefault();
+  }
+
+  const clearAllShipsClick = function(e) {
+    
+    // Step 59 - Delete all items from Data Structue
+    ShipCtrl.clearAllShips();
+
+    e.preventDefault();
+  }
+
   return {
     init: function() { // Step 3 - initialize app
 
+      // Step 35 - call hide buttons
+      UIctrl.clearEditState();
       
       const ships = ShipCtrl.getShips();
 
@@ -217,6 +412,8 @@ const app = (function(ShipCtrl, UIctrl) {
       // Step 33 - add show credits function to init
       const totalCredits = ShipCtrl.getTotalCredits();      
       UIctrl.showTotalCredits(totalCredits);
+
+
 
 
       // Step 10 - Load event listeners

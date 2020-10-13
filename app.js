@@ -5,11 +5,44 @@
 
 const StorageCtrl = (function() {
 
+  // Step 64 - Initiate Local Storage
+  return {    
+    storeShip: function(ship) {
+      let ships;
+
+      if(localStorage.getItem('ships') === null) {
+        ships = []
+
+        ships.push(ship);
+
+        localStorage.setItem('ships', JSON.stringify(ships));
+      } else {
+
+        ships = JSON.parse(localStorage.getItem('ships'));
+        
+        ships.push(ship);
+
+        localStorage.setItem('ships', JSON.stringify(ships));
+
+      }
+    },
+    getShipsFromStorage: function() {
+      let ships;
+
+      if(localStorage.getItem('ships') === null) {
+        ships = [];
+      } else {
+        ships = JSON.parse(localStorage.getItem('ships'));
+
+        return ships;
+      }
+    }
+  }
 })();
 
 
 // ************************************
-//          ship Controller
+//          Ship Controller
 // ************************************
 
 
@@ -24,10 +57,11 @@ const ShipCtrl = (function() {
 
   // Step 1 - Data Structure
   const data = {
-    ships: [
-      // {id: 0, name: 'MSR', cost: '110'},
-      // {id: 1, name: 'Hammerhead', cost: '510'}
-    ],
+    // ships: [
+    //   // {id: 0, name: 'MSR', cost: '110'},
+    //   // {id: 1, name: 'Hammerhead', cost: '510'}
+    // ],
+    ships: StorageCtrl.getShipsFromStorage(),
     currentShip: null,
     totalCredits: 0
   }
@@ -246,6 +280,15 @@ const UIctrl = (function() {
       const ship = document.querySelector(shipID);
 
       ship.remove();
+    },
+    removeShips: function() {
+      let shipList = document.querySelectorAll(UIselectors.shipsList);
+
+      shipList = Array.from(shipList);
+
+      shipList.forEach((ship) => {
+        ship.remove();
+      })
     }
   }
 
@@ -257,7 +300,7 @@ const UIctrl = (function() {
 // ************************************
 
 
-const app = (function(ShipCtrl, UIctrl) {  
+const app = (function(ShipCtrl, StorageCtrl, UIctrl) {  
   
   // Step 9 - Stores & Loades event listeners
   const loadEventListeners = function() {
@@ -298,6 +341,7 @@ const app = (function(ShipCtrl, UIctrl) {
     
     // Step 13 - put inputs into a variable
     const input = UIctrl.getShipInput();
+    
 
     // Step 14 - check if input is empty
     if(input.name !== '' && input.cost !== '') {
@@ -314,9 +358,12 @@ const app = (function(ShipCtrl, UIctrl) {
       // Step 31 - SHOW total credits in UI
       UIctrl.showTotalCredits(totalCredits);
 
+      // Step 64 - Store local when adding
+      StorageCtrl.storeShip(newShip);
+
       // Step 24 - Clear input fields
       UIctrl.clearInput();
-    } 
+    }
 
     e.preventDefault();
   }
@@ -387,8 +434,19 @@ const app = (function(ShipCtrl, UIctrl) {
 
   const clearAllShipsClick = function(e) {
     
-    // Step 59 - Delete all items from Data Structue
+    // Step 59 - Delete all ships from Data Structue
     ShipCtrl.clearAllShips();
+
+    // Step 61 - Update Credits
+    const totalCredits = ShipCtrl.getTotalCredits();
+    UIctrl.showTotalCredits(totalCredits);
+
+    // Step 60 - Remove from UI
+    UIctrl.removeShips();
+
+    // Step 62 - Hide UL
+    UIctrl.hideList();
+
 
     e.preventDefault();
   }
@@ -413,15 +471,12 @@ const app = (function(ShipCtrl, UIctrl) {
       const totalCredits = ShipCtrl.getTotalCredits();      
       UIctrl.showTotalCredits(totalCredits);
 
-
-
-
       // Step 10 - Load event listeners
       loadEventListeners();
     }
   }
 
-})(ShipCtrl, UIctrl);
+})(ShipCtrl, StorageCtrl, UIctrl);
 
 // Step 5 - initialize app
 app.init();

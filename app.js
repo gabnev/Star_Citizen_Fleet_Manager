@@ -28,14 +28,39 @@ const StorageCtrl = (function() {
     },
     getShipsFromStorage: function() {
       let ships;
-
       if(localStorage.getItem('ships') === null) {
         ships = [];
       } else {
         ships = JSON.parse(localStorage.getItem('ships'));
-
-        return ships;
       }
+      return ships;
+    },
+    updateShipStorage: function(updatedShip) {
+      let ships = JSON.parse(localStorage.getItem('ships'));
+
+      ships.forEach((ship, index) => {
+        if(updatedShip.id === ship.id) {
+          ships.splice(index, 1, updatedShip);
+        }
+      });
+      localStorage.setItem('ships', JSON.stringify(ships));
+    },
+    deleteShipFromStorage: function(id) {
+      let ships = JSON.parse(localStorage.getItem('ships'));
+      
+      ships.forEach((ship, index) => {
+        console.log(ship.id);
+        console.log(id);
+
+        if(id === ship.id) {
+          ships.splice(index, 1);
+          console.log(123)
+        }
+      });
+      localStorage.setItem('ships', JSON.stringify(ships))
+    },
+    clearShipsFromStorage: function() {
+      localStorage.removeItem('ships');
     }
   }
 })();
@@ -407,6 +432,9 @@ const app = (function(ShipCtrl, StorageCtrl, UIctrl) {
     const totalCredits = ShipCtrl.getTotalCredits();
     UIctrl.showTotalCredits(totalCredits);
 
+    // Step 65
+    StorageCtrl.updateShipStorage(updatedShip);
+
     UIctrl.clearEditState();
 
     e.preventDefault();
@@ -426,6 +454,9 @@ const app = (function(ShipCtrl, StorageCtrl, UIctrl) {
     const totalCredits = ShipCtrl.getTotalCredits();
     UIctrl.showTotalCredits(totalCredits);
 
+    // Step 66
+    StorageCtrl.deleteShipFromStorage(currentShip.id);
+
     UIctrl.clearEditState();
 
 
@@ -443,6 +474,9 @@ const app = (function(ShipCtrl, StorageCtrl, UIctrl) {
 
     // Step 60 - Remove from UI
     UIctrl.removeShips();
+
+    // Step - 67
+    StorageCtrl.clearShipsFromStorage();
 
     // Step 62 - Hide UL
     UIctrl.hideList();
